@@ -7,6 +7,7 @@
         {% set create_sql %}
             CREATE TABLE {{ target.schema }}.{{ mart }} AS {{ ref(mart) }}
         {% endset %}
+        {{ log("Executing SQL: " ~ create_sql, info=True) }}
         {% do run_query(create_sql) %}
     {% endif %}
     
@@ -16,7 +17,7 @@
         INSERT INTO {{ target.schema }}.{{ mart }} 
         SELECT * FROM {{ ref(mart) }}
     {% endset %}
-    
+    {{ log("Executing SQL: " ~ insert_sql, info=True) }}
     {% do run_query(insert_sql) %}
     {{ log("✓ Exported " ~ mart, info=True) }}
 {% endmacro %}

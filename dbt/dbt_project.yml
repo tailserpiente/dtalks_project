@@ -13,10 +13,10 @@ models:
   github_analytics:
     raw:
       +materialized: view
-      schema: raw
+      #schema: raw
     datavault:
       +materialized: table
-      schema: datavault
-    marts:
+      #schema: datavault
+    pre_marts:
       +materialized: view
-      schema: dds
+      #schema: dds

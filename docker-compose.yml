@@ -75,6 +75,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-analytics_pass}
       POSTGRES_DB: ${POSTGRES_DB:-github_analytics}
       CLICKHOUSE_HOST: clickhouse
+      CLICKHOUSE_DB: ${CLICKHOUSE_DB:-github_marts}
       CLICKHOUSE_PORT: 9010
       CLICKHOUSE_USER: ${CLICKHOUSE_USER:-clickhouse_user}
       CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD:-clickhouse_pass}

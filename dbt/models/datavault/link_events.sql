@@ -1,8 +1,7 @@
 {{
     config(
         materialized='incremental',
-        unique_key='event_hash_key',
-        schema='datavault'
+        unique_key='event_hash_key' 
     )
 }}
 
@@ -19,8 +18,8 @@ SELECT
     DATE(created_at) as event_date,
     CURRENT_TIMESTAMP as load_date,
     'gh_archive' as record_source
-FROM {{ ref('raw_github_events') }}
+FROM {{ source('raw', 'raw_github_events')  }}
 
 {% if is_incremental() %}
-WHERE DATE(created_at) >= (SELECT MAX(event_date) FROM {{ this }})
+WHERE DATE(created_at) >= (SELECT COALESCE(MAX(event_date), date'1900-01-01') FROM {{ this }})
 {% endif %}

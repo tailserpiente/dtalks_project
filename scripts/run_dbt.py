@@ -2,6 +2,7 @@
 import subprocess
 import os
 import sys
+import json
 
 def run_dbt_command(command):
     """Запуск dbt команды"""
@@ -21,12 +22,25 @@ def run_dbt_command(command):
 def main():
     print("=== Running dbt transformations ===")
     
+        # Указываем дату загрузки (можно передать как аргумент или использовать текущую)
+    if len(sys.argv) > 1:
+        load_date = sys.argv[1]
+    else:
+        # По умолчанию загружаем данные за 2015-01-01
+        load_date = "2015-01-01"
+    print(f"Processing data for date: {load_date}")
+    
+    # Создаем правильный JSON для --vars
+    vars_json = json.dumps({"load_date": load_date})
     # Запуск трансформаций
     commands = [
+        "clean",
         "deps",  # Установка зависимостей
-        "run --models raw",  # Raw слой
-        "run --models datavault",  # Data Vault слой
-        "run --models marts",  # Витрины данных
+        "run --target raw --models raw",  # Raw слой
+        "run --target datavault --models datavault",  # Data Vault слой
+        f"run --target pre_marts --models marts --vars '{vars_json}'",
+        #"run --target clickhouse --models marts",
+        #"run --target clickhouse --models marts",  # Витрины данных
         "test"  # Тесты
     ]
     

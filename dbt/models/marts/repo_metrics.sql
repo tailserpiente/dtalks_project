@@ -1,7 +1,7 @@
+
 {{
     config(
-        materialized='table',
-        schema='dds'
+        materialized='table'
     )
 }}
 
@@ -16,8 +16,10 @@ SELECT
     SUM(CASE WHEN ge.event_type = 'WatchEvent' THEN 1 ELSE 0 END) as total_stars,
     MIN(ge.created_at) as first_activity,
     MAX(ge.created_at) as last_activity
-FROM {{ ref('raw_github_events') }} ge
-GROUP BY 1,2
-HAVING COUNT(*) > 10
-ORDER BY total_events DESC
-LIMIT 1000
+FROM {{ source('raw', 'raw_github_events') }} ge
+WHERE 1=1
+    {% if var('load_date', 'all') != 'all' %}
+        AND DATE(ge.created_at) = DATE('{{ var("load_date") }}')
+    {% endif %}
+GROUP BY 1, 2
+ORDER BY total_events DESC 

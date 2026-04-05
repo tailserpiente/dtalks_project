@@ -1,6 +1,5 @@
 {{ config(
-    materialized='view',
-    schema='raw'
+    materialized='view'  
 ) }}
 
 SELECT 

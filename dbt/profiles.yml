@@ -1,14 +1,34 @@
 github_analytics:
-  target: dev
+  target: datavault
   outputs:
-    dev:
+    raw:
       type: postgres
       host: "{{ env_var('POSTGRES_HOST') }}"
       port: 5432
       user: "{{ env_var('POSTGRES_USER') }}"
       password: "{{ env_var('POSTGRES_PASSWORD') }}"
       dbname: "{{ env_var('POSTGRES_DB') }}"
-      schema: ""
+      schema: raw
+      threads: 4
+    
+    datavault:
+      type: postgres
+      host: "{{ env_var('POSTGRES_HOST') }}"
+      port: 5432
+      user: "{{ env_var('POSTGRES_USER') }}"
+      password: "{{ env_var('POSTGRES_PASSWORD') }}"
+      dbname: "{{ env_var('POSTGRES_DB') }}"
+      schema: datavault
+      threads: 4
+    
+    pre_marts:
+      type: postgres
+      host: "{{ env_var('POSTGRES_HOST') }}"
+      port: 5432
+      user: "{{ env_var('POSTGRES_USER') }}"
+      password: "{{ env_var('POSTGRES_PASSWORD') }}"
+      dbname: "{{ env_var('POSTGRES_DB') }}"
+      schema: pre_marts
       threads: 4
 
     clickhouse:
@@ -18,5 +38,5 @@ github_analytics:
       user: "{{ env_var('CLICKHOUSE_USER') }}"
       password: "{{ env_var('CLICKHOUSE_PASSWORD') }}"
       dbname: "{{ env_var('CLICKHOUSE_DB') }}"
-      schema: default
+      schema: github_marts
       threads: 4

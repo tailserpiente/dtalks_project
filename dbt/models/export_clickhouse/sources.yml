@@ -1,0 +1,6 @@
+sources:
+  - name: pre_marts
+    schema: pre_marts
+    tables:
+      - name: user_activity_daily
+        identifier: user_activity_daily

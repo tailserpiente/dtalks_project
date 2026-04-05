@@ -2,8 +2,7 @@
     config(
         materialized='incremental',
         unique_key='user_hash_key',
-        on_schema_change='append_new_columns',
-        schema='datavault'
+        on_schema_change='append_new_columns'  
     )
 }}
 
@@ -12,7 +11,7 @@ SELECT
     actor_id as user_id,
     CURRENT_TIMESTAMP as load_date,
     'gh_archive' as record_source
-FROM {{ ref('raw_github_events') }}
+FROM {{  source('raw', 'raw_github_events')  }}
 WHERE actor_id IS NOT NULL
 
 {% if is_incremental() %}
