@@ -1,0 +1,22 @@
+name: 'github_analytics'
+version: '1.0.0'
+config-version: 2
+
+profile: 'github_analytics'
+
+model-paths: ["models"]
+macro-paths: ["macros"]
+target-path: "target"
+clean-targets: ["target", "dbt_modules"]
+
+models:
+  github_analytics:
+    raw:
+      +materialized: view
+      schema: raw
+    datavault:
+      +materialized: table
+      schema: datavault
+    marts:
+      +materialized: view
+      schema: dds
