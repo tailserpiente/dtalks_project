@@ -2,10 +2,14 @@ FROM apache/superset:latest
 
 USER root
 
-RUN apt-get update && apt-get install -y python3-pip && \
-    pip install --no-cache-dir psycopg2-binary && \
-    apt-get remove -y python3-pip && apt-get autoremove -y
-
-
+# The venv at /app/.venv has no pip bundled.
+# Install system pip, then push packages directly into the venv's site-packages.
+RUN apt-get update -qq && \
+    apt-get install -y --no-install-recommends python3-pip && \
+    pip3 install --no-cache-dir \
+        --target /app/.venv/lib/python3.10/site-packages \
+        psycopg2-binary \
+        clickhouse-connect && \
+    rm -rf /var/lib/apt/lists/*
 
 USER superset

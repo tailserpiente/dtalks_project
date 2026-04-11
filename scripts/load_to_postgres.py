@@ -41,7 +41,10 @@ def get_s3_client():
         verify=False
     )
 
-def load_events_to_postgres():
+def load_events_to_postgres(date_str: str = '2015-01-01'):
+    year, month, day = date_str.split('-')
+    s3_prefix = f'{year}/{month}/{day}/'
+
     conn = psycopg2.connect(
         host=POSTGRES_HOST,
         database=POSTGRES_DB,
@@ -49,10 +52,10 @@ def load_events_to_postgres():
         password=POSTGRES_PASSWORD
     )
     cursor = conn.cursor()
-    
+
     s3 = get_s3_client()
-    
-    response = s3.list_objects_v2(Bucket=BUCKET_NAME, Prefix='2015/01/01/')
+
+    response = s3.list_objects_v2(Bucket=BUCKET_NAME, Prefix=s3_prefix)
     
     for obj in response.get('Contents', []):
         print(f"Processing {obj['Key']}")
@@ -124,4 +127,6 @@ def load_events_to_postgres():
     print("\n✅ All data loaded successfully!")
 
 if __name__ == '__main__':
-    load_events_to_postgres()
+    import sys
+    date_arg = sys.argv[1] if len(sys.argv) > 1 else '2015-01-01'
+    load_events_to_postgres(date_arg)

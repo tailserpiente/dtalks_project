@@ -68,7 +68,7 @@ services:
     volumes:
       - ./dbt:/dbt
       - ./scripts:/scripts
-      - ./dbt/profiles.yml:/root/.dbt/profiles.yml  # Добавьте эту строку
+      - ./dbt/profiles.yml:/root/.dbt/profiles.yml
     environment:
       POSTGRES_HOST: postgres
       POSTGRES_USER: ${POSTGRES_USER:-analytics_user}
@@ -76,7 +76,7 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-github_analytics}
       CLICKHOUSE_HOST: clickhouse
       CLICKHOUSE_DB: ${CLICKHOUSE_DB:-github_marts}
-      CLICKHOUSE_PORT: 9010
+      CLICKHOUSE_PORT: 9000
       CLICKHOUSE_USER: ${CLICKHOUSE_USER:-clickhouse_user}
       CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD:-clickhouse_pass}
       S3_ENDPOINT: http://minio:9000
@@ -100,6 +100,9 @@ services:
     environment:
       SUPERSET_SECRET_KEY: ${SUPERSET_SECRET_KEY:-your_secret_key_here}
       SUPERSET_LOAD_EXAMPLES: "no"
+      POSTGRES_USER: ${POSTGRES_USER:-analytics_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-analytics_pass}
+      POSTGRES_DB: ${POSTGRES_DB:-github_analytics}
     ports:
       - "8088:8088"
     volumes:
@@ -112,10 +115,9 @@ services:
         condition: service_healthy
     command: >
       sh -c "
-      superset fab create-admin &&
       superset db upgrade &&
       superset init &&
-      superset run -p 8088 --with-threads --reload --debugger
+      superset run -h 0.0.0.0 -p 8088 --with-threads --reload --debugger
       "
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8088/health"]

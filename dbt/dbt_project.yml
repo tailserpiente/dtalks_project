@@ -13,10 +13,9 @@ models:
   github_analytics:
     raw:
       +materialized: view
-      #schema: raw
     datavault:
       +materialized: table
-      #schema: datavault
     pre_marts:
-      +materialized: view
-      #schema: dds
+      +materialized: table
+    export_clickhouse:
+      +materialized: table

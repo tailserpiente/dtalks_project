@@ -17,7 +17,8 @@ RUN pip install --no-cache-dir \
     dbt-clickhouse==1.8.0 \
     requests==2.31.0 \
     boto3==1.34.0 \
-    psycopg2-binary==2.9.9
+    psycopg2-binary==2.9.9 \
+    clickhouse-driver==0.2.9
 
 # Создаем директории
 RUN mkdir -p /dbt /root/.dbt

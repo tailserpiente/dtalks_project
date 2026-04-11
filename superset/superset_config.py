@@ -10,14 +10,10 @@ CLICKHOUSE_PORT = 8123
 CLICKHOUSE_USER = os.getenv('CLICKHOUSE_USER', 'clickhouse_user')
 CLICKHOUSE_PASSWORD = os.getenv('CLICKHOUSE_PASSWORD', 'clickhouse_pass')
 
-# Настройка кэша
+# SimpleCache — не требует внешних сервисов (Redis в compose не задан)
 CACHE_CONFIG = {
-    'CACHE_TYPE': 'RedisCache',
+    'CACHE_TYPE': 'SimpleCache',
     'CACHE_DEFAULT_TIMEOUT': 300,
-    'CACHE_KEY_PREFIX': 'superset_',
-    'CACHE_REDIS_HOST': 'redis',
-    'CACHE_REDIS_PORT': 6379,
-    'CACHE_REDIS_DB': 1,
 }
 
 FEATURE_FLAGS = {
