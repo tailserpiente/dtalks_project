@@ -1,1 +1,21 @@
+# GH Archive raw files
 *.json.gz
+github_files/
+
+# dbt build artifacts
+dbt/logs/
+dbt/target/
+dbt/dbt_packages/
+dbt/.user.yml
+
+# Environment & secrets
+.env
+
+# MinIO local mirror
+myminio/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/

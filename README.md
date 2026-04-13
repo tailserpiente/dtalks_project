@@ -1,19 +1,19 @@
 # dtalks_project — GitHub Archive Analytics Pipeline
 
-End-to-end data engineering pipeline: загружает события из [GH Archive](https://www.gharchive.org/), моделирует их через Data Vault, строит аналитические витрины и показывает дашборды в Apache Superset.
+End-to-end data engineering pipeline that ingests [GH Archive](https://www.gharchive.org/) events, models them through a Data Vault, builds analytics marts and serves dashboards in Apache Superset.
 
 ---
 
-## Архитектура
+## Architecture
 
 ```
 GH Archive (HTTPS)
-        │  wget  (pipeline.sh шаг 1)
+        │  wget  (pipeline.sh step 1)
         ▼
   ┌─────────────┐
   │  MinIO (S3) │  github-archive/YYYY/MM/DD/*.json.gz
   └──────┬──────┘
-         │  load_to_postgres.py  (pipeline.sh шаг 2)
+         │  load_to_postgres.py  (pipeline.sh step 2)
          ▼
   ┌──────────────────────────────────────────────┐
   │              PostgreSQL 18                   │
@@ -22,41 +22,41 @@ GH Archive (HTTPS)
   │  pre_marts  → user_activity_daily,          │
   │               repo_metrics (tables)          │
   └──────────────────────────────────────────────┘
-         │  run_dbt.py  (pipeline.sh шаг 3)
+         │  run_dbt.py  (pipeline.sh step 3)
          ▼
   ┌─────────────────┐
   │   ClickHouse    │  github_marts.*  (Python bulk insert)
   └────────┬────────┘
            ▼
   ┌─────────────────┐
-  │ Apache Superset │  дашборды
+  │ Apache Superset │  dashboards
   └─────────────────┘
 ```
 
 ---
 
-## Стек
+## Stack
 
-| Сервис | Образ | Порт(ы) | Роль |
+| Service | Image | Port(s) | Role |
 |---|---|---|---|
-| **MinIO** | `minio/minio:latest` | `9000` (API), `9001` (Console) | S3-хранилище сырых файлов |
-| **PostgreSQL** | `postgres:18` | `5432` | Raw + Data Vault + Marts |
-| **ClickHouse** | `clickhouse/clickhouse-server:latest` | `8123` (HTTP), `9010`→`9000` (native) | Аналитические витрины |
-| **dbt** | custom (`dbt/Dockerfile`) | — | Трансформации + экспорт |
-| **Superset** | custom (`superset/Dockerfile`) | `8088` | BI / дашборды |
+| **MinIO** | `minio/minio:latest` | `9000` (API), `9001` (Console) | S3-compatible object store |
+| **PostgreSQL** | `postgres:18` | `5432` | Raw ingestion + Data Vault + Marts |
+| **ClickHouse** | `clickhouse/clickhouse-server:latest` | `8123` (HTTP), `9010`→`9000` (native) | Analytics mart storage |
+| **dbt** | custom (`dbt/Dockerfile`) | — | Transformations + ClickHouse export |
+| **Superset** | custom (`superset/Dockerfile`) | `8088` | BI / dashboards |
 
-> **Сеть внутри Docker:** ClickHouse native-порт внутри сети — `9000` (не `9010`).  
-> `9010` — это только хост-маппинг. Все скрипты внутри контейнеров используют `clickhouse:9000`.
+> **Docker internal network:** ClickHouse native port inside the network is `9000` (not `9010`).
+> `9010` is the host-side mapping only. All scripts inside containers use `clickhouse:9000`.
 
 ---
 
-## Структура проекта
+## Project Structure
 
 ```
 dtalks_project/
-├── pipeline.sh                 # ← главный скрипт запуска пайплайна
+├── pipeline.sh                 # ← main pipeline runner
 ├── docker-compose.yml
-├── .env                        # секреты (не коммитится)
+├── .env                        # secrets (not committed)
 ├── requirements.txt
 │
 ├── dbt/
@@ -64,42 +64,43 @@ dtalks_project/
 │   ├── dbt_project.yml
 │   ├── profiles.yml            # targets: raw | datavault | pre_marts | clickhouse
 │   ├── macros/
-│   │   ├── generate_hash.sql   # MD5(CONCAT(...)) для DV-ключей
+│   │   ├── generate_hash.sql   # MD5(CONCAT(...)) for DV hash keys
 │   │   └── export_to_clickhouse.sql
 │   └── models/
 │       ├── raw/                # raw_github_events (view)
 │       ├── datavault/          # hub_users, link_events (incremental)
 │       ├── marts/              # user_activity_daily, repo_metrics (table → pre_marts schema)
-│       └── export_clickhouse/  # v_user_activity_daily (не используется, экспорт через Python)
+│       └── export_clickhouse/  # v_user_activity_daily (unused; export is done via Python)
 │
 ├── scripts/
-│   ├── load_to_postgres.py     # MinIO → raw.github_events (принимает DATE аргумент)
-│   ├── run_dbt.py              # dbt raw→datavault→marts + Python экспорт в ClickHouse
-│   └── download_to_s3.py       # альтернативный скрипт скачивания (не используется в pipeline.sh)
+│   ├── load_to_postgres.py     # MinIO → raw.github_events  (accepts DATE argument)
+│   ├── run_dbt.py              # dbt raw→datavault→marts + Python export to ClickHouse
+│   └── download_to_s3.py       # alternative download script (not used by pipeline.sh)
 │
 ├── postgres/
-│   └── init-datavault.sql      # схемы raw/datavault/dds, таблицы, индексы
+│   └── init-datavault.sql      # raw/datavault/dds schemas, tables, indexes
 ├── clickhouse/
-│   └── init.sql                # DB github_marts + таблицы витрин (выполняется один раз при пустом volume)
+│   └── init.sql                # DB github_marts + mart tables (runs once on empty volume)
 ├── superset/
-│   ├── Dockerfile              # apache/superset:latest + psycopg2-binary + clickhouse-connect (--target venv)
-│   └── superset_config.py      # SECRET_KEY, SQLALCHEMY_DATABASE_URI, SimpleCache, TALISMAN_ENABLED=False
+│   ├── Dockerfile              # apache/superset:latest + psycopg2-binary + clickhouse-connect
+│   └── superset_config.py      # SECRET_KEY, SQLALCHEMY_DATABASE_URI, SimpleCache
 └── s3/
-    └── init-s3.sh              # автосоздание bucket github-archive при старте MinIO
+    └── init-s3.sh              # auto-creates github-archive bucket on MinIO startup
 ```
 
 ---
 
-## Модель данных
+## Data Model
 
-### Raw (`raw.github_events`)
+### Raw layer (`raw.github_events`)
 ```
 id, event_type, actor_id, actor_login, repo_id, repo_name,
 created_at, payload (JSONB), raw_data (TEXT), loaded_at
 ```
 
-### Data Vault (`datavault` schema)
-| Таблица | Тип | Ключ |
+### Data Vault (`datavault` schema, PostgreSQL)
+
+| Table | Type | Key |
 |---|---|---|
 | `hub_users` | Hub | `user_hash_key` MD5(actor_id) |
 | `hub_repos` | Hub | `repo_hash_key` MD5(repo_id) |
@@ -108,20 +109,37 @@ created_at, payload (JSONB), raw_data (TEXT), loaded_at
 
 ### Marts (PostgreSQL `pre_marts` → ClickHouse `github_marts`)
 
-**`user_activity_daily`** — дневная активность по пользователю:
-`activity_date, actor_id, actor_login, total_events, unique_repos, push_events, pr_events, issue_events, star_events`
+**`user_activity_daily`** — daily activity per actor:
 
-**`repo_metrics`** — метрики репозитория:
-`repo_id, repo_name, unique_contributors, total_events, total_commits, total_prs, total_issues, total_stars, first_activity, last_activity`
+| Column | Description |
+|---|---|
+| `activity_date` | calendar date |
+| `actor_id` / `actor_login` | GitHub user |
+| `total_events` | all event types |
+| `unique_repos` | distinct repos touched |
+| `push_events` | PushEvent count |
+| `pr_events` | PullRequestEvent count |
+| `issue_events` | IssuesEvent count |
+| `star_events` | WatchEvent count |
+
+**`repo_metrics`** — per-repository aggregates:
+
+| Column | Description |
+|---|---|
+| `repo_id` / `repo_name` | repository |
+| `unique_contributors` | distinct actors |
+| `total_events` | total activity |
+| `total_commits` / `total_prs` / `total_issues` / `total_stars` | event type counts |
+| `first_activity` / `last_activity` | activity window |
 
 ---
 
-## Быстрый старт (с нуля)
+## Quick Start (from scratch)
 
-### 1. Предварительные требования
+### 1. Prerequisites
 
-- Docker ≥ 24 с Compose v2
-- WSL2 / Linux
+- Docker ≥ 24 with Compose v2
+- WSL2 / Linux with internet access
 - `mc` (MinIO Client):
 
 ```bash
@@ -129,27 +147,27 @@ wget https://dl.min.io/client/mc/release/linux-amd64/mc
 chmod +x mc && sudo mv mc /usr/local/bin/
 ```
 
-### 2. Клонировать и настроить
+### 2. Clone and configure
 
 ```bash
 git clone <repo-url>
 cd dtalks_project
-cp .env.example .env   # отредактируй пароли при необходимости
+cp .env.example .env   # edit passwords if needed
 ```
 
-### 3. Собрать и запустить контейнеры
+### 3. Build and start containers
 
 ```bash
 docker compose build --no-cache
 docker compose up -d
 ```
 
-Дождаться `(healthy)` у всех сервисов (~60 с):
+Wait for all services to become `(healthy)` (~60 s):
 ```bash
 docker compose ps
 ```
 
-### 4. Инициализировать Superset (один раз)
+### 4. Initialize Superset (one-time)
 
 ```bash
 docker compose exec superset superset fab create-admin \
@@ -160,9 +178,9 @@ docker compose exec superset superset fab create-admin \
   --password admin123
 ```
 
-> `db upgrade` и `init` выполняются автоматически при старте контейнера.
+> `db upgrade` and `init` run automatically on container start.
 
-### 5. Настроить mc alias (один раз)
+### 5. Configure mc alias (one-time)
 
 ```bash
 mc alias set myminio http://localhost:9000 \
@@ -170,13 +188,13 @@ mc alias set myminio http://localhost:9000 \
   $(grep MINIO_ROOT_PASSWORD .env | cut -d= -f2)
 ```
 
-### 6. Запустить пайплайн
+### 6. Run the pipeline
 
 ```bash
 ./pipeline.sh 2015-01-01
 ```
 
-Для нескольких дней:
+Load multiple days:
 ```bash
 for d in 2015-01-01 2015-01-02 2015-01-03; do
     ./pipeline.sh $d
@@ -185,37 +203,37 @@ done
 
 ---
 
-## Пайплайн (`pipeline.sh`)
+## Pipeline (`pipeline.sh`)
 
-Скрипт принимает дату в формате `YYYY-MM-DD` и выполняет 4 шага:
+Accepts a date in `YYYY-MM-DD` format and runs 4 steps:
 
-| Шаг | Действие | Идемпотентность |
+| Step | Action | Idempotent |
 |---|---|---|
-| **1** | Скачивает 24 файла `YYYY-MM-DD-{0..23}.json.gz` с GH Archive | Пропускает уже скачанные |
-| **2** | Загружает файлы в MinIO `s3://github-archive/YYYY/MM/DD/` | Пропускает уже загруженные |
-| **3а** | `load_to_postgres.py DATE` → `raw.github_events` | `ON CONFLICT DO NOTHING` |
-| **3б** | `run_dbt.py DATE` → datavault → pre_marts → ClickHouse | dbt incremental |
-| **4** | Проверяет количество строк в ClickHouse | — |
+| **1** | Downloads 24 hourly `.json.gz` files from GH Archive | Skips already downloaded |
+| **2** | Uploads files to MinIO `s3://github-archive/YYYY/MM/DD/` | Skips already uploaded |
+| **3a** | `load_to_postgres.py DATE` → `raw.github_events` | `ON CONFLICT DO NOTHING` |
+| **3b** | `run_dbt.py DATE` → datavault → pre_marts → ClickHouse | dbt incremental models |
+| **4** | Verifies row counts in ClickHouse | — |
 
-Все учётные данные читаются из `.env`.
+All credentials are read from `.env`.
 
 ---
 
-## Доступ к сервисам
+## Accessing Services
 
-> **WSL2 + VPN:** многие VPN-клиенты блокируют `localhost` в WSL2.  
-> Используй IP интерфейса `eth1`:
+> **WSL2 + VPN:** many VPN clients break WSL2's virtual network adapter, making `localhost` unreachable.
+> Use the `eth1` IP address instead:
 > ```bash
 > ip addr show eth1 | grep 'inet ' | awk '{print $2}' | cut -d/ -f1
 > ```
 
-| Сервис | URL | Логин |
+| Service | URL | Credentials |
 |---|---|---|
 | **Superset** | `http://<WSL_IP>:8088` | admin / admin123 |
-| **MinIO Console** | `http://<WSL_IP>:9001` | из `.env` MINIO_ROOT_USER |
-| **ClickHouse HTTP** | `http://<WSL_IP>:8123` | из `.env` CLICKHOUSE_USER |
+| **MinIO Console** | `http://<WSL_IP>:9001` | `MINIO_ROOT_USER` from `.env` |
+| **ClickHouse HTTP** | `http://<WSL_IP>:8123` | `CLICKHOUSE_USER` from `.env` |
 
-### Подключение ClickHouse в Superset
+### Add ClickHouse to Superset
 
 `Settings → Database Connections → + Database → ClickHouse Connect`
 
@@ -225,39 +243,38 @@ clickhousedb://clickhouse_user:ClickHouse2025!@clickhouse:8123/github_marts
 
 ---
 
-## Управление контейнерами
+## Container Management
 
 ```bash
-# Запустить всё
+# Start all services
 docker compose up -d
 
-# Пересобрать образы с нуля (без кэша)
-docker compose build --no-cache
-docker compose up -d
+# Rebuild images from scratch (no cache)
+docker compose build --no-cache && docker compose up -d
 
-# Остановить (данные сохраняются)
+# Stop (data volumes preserved)
 docker compose down
 
-# Полный сброс (УДАЛЯЕТ ВСЕ ДАННЫЕ)
+# Full reset — DELETES ALL DATA
 docker compose down -v
 
-# Логи конкретного сервиса
+# Tail logs for a service
 docker compose logs -f superset
 docker compose logs -f dbt
 
-# Подключиться к PostgreSQL
+# Connect to PostgreSQL
 docker compose exec postgres psql -U analytics_user -d github_analytics
 
-# Подключиться к ClickHouse
+# Connect to ClickHouse
 docker compose exec clickhouse clickhouse-client \
   --user clickhouse_user --password ClickHouse2025!
 ```
 
 ---
 
-## Создать таблицы ClickHouse вручную
+## Create ClickHouse Tables Manually
 
-> Нужно только если контейнер стартовал с уже существующим volume (init.sql не запускается повторно).
+> Only needed if the container started with an existing volume (init.sql does not re-run).
 
 ```bash
 docker compose exec clickhouse clickhouse-client \
@@ -282,28 +299,28 @@ CREATE TABLE IF NOT EXISTS github_marts.repo_metrics (
 
 ---
 
-## Переменные окружения (`.env`)
+## Environment Variables (`.env`)
 
-| Переменная | Описание |
+| Variable | Description |
 |---|---|
 | `MINIO_ROOT_USER` | MinIO access key |
 | `MINIO_ROOT_PASSWORD` | MinIO secret key |
-| `POSTGRES_DB` | Имя БД PostgreSQL |
-| `POSTGRES_USER` | PG пользователь |
-| `POSTGRES_PASSWORD` | PG пароль |
-| `CLICKHOUSE_DB` | ClickHouse база (`github_marts`) |
-| `CLICKHOUSE_USER` | CH пользователь |
-| `CLICKHOUSE_PASSWORD` | CH пароль |
-| `SUPERSET_SECRET_KEY` | Flask secret key (сменить в prod!) |
+| `POSTGRES_DB` | PostgreSQL database name |
+| `POSTGRES_USER` | PostgreSQL username |
+| `POSTGRES_PASSWORD` | PostgreSQL password |
+| `CLICKHOUSE_DB` | ClickHouse database (`github_marts`) |
+| `CLICKHOUSE_USER` | ClickHouse username |
+| `CLICKHOUSE_PASSWORD` | ClickHouse password |
+| `SUPERSET_SECRET_KEY` | Flask secret key (change in production!) |
 
 ---
 
-## Известные особенности
+## Known Issues & Workarounds
 
-| Ситуация | Причина | Решение |
+| Issue | Cause | Fix |
 |---|---|---|
-| Superset не открывается по `localhost` | VPN блокирует WSL2 virtual adapter | Использовать IP `eth1` |
-| ClickHouse `Connection refused` из dbt-контейнера | Старый контейнер с `CLICKHOUSE_PORT=9010` | `docker compose exec -e CLICKHOUSE_PORT=9000 dbt ...` или пересоздать контейнер |
-| ClickHouse таблицы не существуют | `init.sql` не запускается при существующем volume | Создать таблицы вручную (команда выше) |
-| Superset: `No module named psycopg2` | pip в образе устанавливает в системный Python, а не в venv | Исправлено в `superset/Dockerfile`: `pip3 install --target /app/.venv/lib/python3.10/site-packages` |
-| `postgres:18` не находится | Образ ещё в beta | Заменить на `postgres:17` в `docker-compose.yml` если нужно |
+| Superset unreachable via `localhost` | VPN blocks WSL2 virtual adapter | Use `eth1` IP address |
+| ClickHouse `Connection refused` from dbt container | Container started with old `CLICKHOUSE_PORT=9010` | Use `docker compose exec -e CLICKHOUSE_PORT=9000 dbt ...` or recreate container |
+| ClickHouse tables do not exist | `init.sql` skipped on existing volume | Create tables manually (command above) |
+| Superset: `No module named psycopg2` | System `pip install` doesn't reach Superset's venv | Fixed in `superset/Dockerfile`: `pip3 install --target /app/.venv/lib/python3.10/site-packages` |
+| `postgres:18` image not found | Image may still be in beta | Replace with `postgres:17` in `docker-compose.yml` if needed |
