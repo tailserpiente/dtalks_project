@@ -1,0 +1,38 @@
+slice_name: Top active users
+description: Actors with highest total_events (mart user_activity_daily)
+viz_type: table
+params:
+  datasource: 0__table
+  viz_type: table
+  query_mode: aggregate
+  groupby:
+    - actor_login
+  metrics:
+    - expressionType: SIMPLE
+      column:
+        column_name: total_events
+      aggregate: SUM
+      label: Total events
+    - expressionType: SIMPLE
+      column:
+        column_name: unique_repos
+      aggregate: SUM
+      label: Repo touches (sum)
+  all_columns: []
+  adhoc_filters: []
+  order_by_cols: []
+  row_limit: 20
+  include_time: false
+  order_desc: true
+  page_length: 0
+  percent_metrics: []
+  show_cell_bars: true
+  table_timestamp_format: smart_date
+  time_grain_sqla: null
+  time_range: No filter
+  extra_form_data: {}
+query_context: null
+cache_timeout: null
+uuid: c3c3c3c3-c3c3-c3c3-c3c3-c3c3c3c3c3c3
+version: "1.0.0"
+dataset_uuid: a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11

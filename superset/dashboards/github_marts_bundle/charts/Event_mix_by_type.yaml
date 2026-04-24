@@ -1,0 +1,52 @@
+slice_name: Event mix by type (totals)
+description: Stacked sums of push / PR / issue / star events across mart rows
+viz_type: echarts_timeseries_bar
+params:
+  datasource: 0__table
+  viz_type: echarts_timeseries_bar
+  adhoc_filters: []
+  annotation_layers: []
+  x_axis: activity_date
+  time_grain_sqla: P1D
+  metrics:
+    - expressionType: SIMPLE
+      column:
+        column_name: push_events
+      aggregate: SUM
+      label: Push
+    - expressionType: SIMPLE
+      column:
+        column_name: pr_events
+      aggregate: SUM
+      label: Pull requests
+    - expressionType: SIMPLE
+      column:
+        column_name: issue_events
+      aggregate: SUM
+      label: Issues
+    - expressionType: SIMPLE
+      column:
+        column_name: star_events
+      aggregate: SUM
+      label: Stars (watch)
+  groupby: []
+  row_limit: 10000
+  order_desc: true
+  truncate_metric: true
+  show_empty_columns: true
+  comparison_type: values
+  time_range: No filter
+  x_axis_time_format: smart_date
+  rich_tooltip: true
+  tooltipTimeFormat: smart_date
+  seriesType: bar
+  y_axis_format: SMART_NUMBER
+  stack: true
+  only_total: true
+  contribution: false
+  extra_form_data: {}
+query_context: null
+cache_timeout: null
+uuid: c4c4c4c4-c4c4-c4c4-c4c4-c4c4c4c4c4c4
+version: "1.0.0"
+dataset_uuid: a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11

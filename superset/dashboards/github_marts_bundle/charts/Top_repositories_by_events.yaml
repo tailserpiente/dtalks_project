@@ -1,0 +1,43 @@
+slice_name: Top repositories by events
+description: Repositories with highest total_events in mart
+viz_type: table
+params:
+  datasource: 0__table
+  viz_type: table
+  query_mode: aggregate
+  groupby:
+    - repo_name
+  metrics:
+    - expressionType: SIMPLE
+      column:
+        column_name: total_events
+      aggregate: SUM
+      label: Total events
+    - expressionType: SIMPLE
+      column:
+        column_name: unique_contributors
+      aggregate: MAX
+      label: Contributors
+    - expressionType: SIMPLE
+      column:
+        column_name: total_stars
+      aggregate: SUM
+      label: Star events (sum)
+  all_columns: []
+  adhoc_filters: []
+  order_by_cols: []
+  row_limit: 15
+  include_time: false
+  order_desc: true
+  page_length: 0
+  percent_metrics: []
+  show_cell_bars: true
+  table_timestamp_format: smart_date
+  time_grain_sqla: null
+  time_range: No filter
+  extra_form_data: {}
+query_context: null
+cache_timeout: null
+uuid: c5c5c5c5-c5c5-c5c5-c5c5-c5c5c5c5c5c5
+version: "1.0.0"
+dataset_uuid: b6d0c7c0-6b5b-4e8a-9b0c-1d1e2f3a4b5c

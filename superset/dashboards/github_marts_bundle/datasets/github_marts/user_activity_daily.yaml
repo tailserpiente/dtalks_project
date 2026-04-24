@@ -1,0 +1,126 @@
+table_name: user_activity_daily
+main_dttm_col: activity_date
+description: Daily per-actor aggregates from GH Archive (ClickHouse mart)
+default_endpoint: null
+offset: 0
+cache_timeout: null
+schema: github_marts
+sql: null
+params: null
+template_params: {}
+filter_select_enabled: true
+fetch_values_predicate: null
+extra: null
+normalize_columns: false
+always_filter_main_dttm: false
+uuid: a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11
+database_uuid: f47ac10b-58cc-4372-a567-0e02b2c3d479
+version: "1.0.0"
+columns:
+  - column_name: activity_date
+    type: DATE
+    is_dttm: true
+    is_active: true
+    filterable: true
+    groupby: true
+    expression: null
+    description: null
+    python_date_format: null
+    extra: {}
+  - column_name: actor_id
+    type: BIGINT
+    is_dttm: false
+    is_active: true
+    filterable: true
+    groupby: true
+    expression: null
+    description: null
+    python_date_format: null
+    extra: {}
+  - column_name: actor_login
+    type: VARCHAR(255)
+    is_dttm: false
+    is_active: true
+    filterable: true
+    groupby: true
+    expression: null
+    description: null
+    python_date_format: null
+    extra: {}
+  - column_name: total_events
+    type: BIGINT
+    is_dttm: false
+    is_active: true
+    filterable: true
+    groupby: false
+    expression: null
+    description: null
+    python_date_format: null
+    extra: {}
+  - column_name: unique_repos
+    type: BIGINT
+    is_dttm: false
+    is_active: true
+    filterable: true
+    groupby: false
+    expression: null
+    description: null
+    python_date_format: null
+    extra: {}
+  - column_name: push_events
+    type: BIGINT
+    is_dttm: false
+    is_active: true
+    filterable: true
+    groupby: false
+    expression: null
+    description: null
+    python_date_format: null
+    extra: {}
+  - column_name: pr_events
+    type: BIGINT
+    is_dttm: false
+    is_active: true
+    filterable: true
+    groupby: false
+    expression: null
+    description: null
+    python_date_format: null
+    extra: {}
+  - column_name: issue_events
+    type: BIGINT
+    is_dttm: false
+    is_active: true
+    filterable: true
+    groupby: false
+    expression: null
+    description: null
+    python_date_format: null
+    extra: {}
+  - column_name: star_events
+    type: BIGINT
+    is_dttm: false
+    is_active: true
+    filterable: true
+    groupby: false
+    expression: null
+    description: null
+    python_date_format: null
+    extra: {}
+metrics:
+  - metric_name: count
+    expression: COUNT(*)
+    metric_type: count
+    verbose_name: COUNT(*)
+    description: null
+    d3format: null
+    extra: {}
+    warning_text: null
+  - metric_name: sum__total_events
+    expression: SUM(total_events)
+    metric_type: null
+    verbose_name: Sum of total_events
+    description: null
+    d3format: null
+    extra: {}
+    warning_text: null

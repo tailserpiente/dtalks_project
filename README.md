@@ -241,6 +241,17 @@ All credentials are read from `.env`.
 clickhousedb://clickhouse_user:ClickHouse2025!@clickhouse:8123/github_marts
 ```
 
+### Import bundled dashboard (GitHub marts)
+
+A ready-made dashboard (KPIs, daily trend, event mix, top users and repos) ships as a Superset **v1** export ZIP. It creates its own ClickHouse database connection and datasets pointing at `github_marts.user_activity_daily` and `github_marts.repo_metrics` (defaults: host `clickhouse`, user `clickhouse_user`, password `clickhouse_pass` — align with your `.env` or edit `databases/ClickHouse_github_marts.yaml` in the bundle before zipping).
+
+```bash
+docker compose cp superset/dashboards/github_marts_bi_export.zip superset:/tmp/github_marts_bi_export.zip
+docker compose exec superset superset import-dashboards -p /tmp/github_marts_bi_export.zip -u admin
+```
+
+Source YAMLs live under `superset/dashboards/github_marts_bundle/` if you need to adjust charts or credentials and rebuild the ZIP (same layout as inside the archive).
+
 ---
 
 ## Container Management
@@ -324,3 +335,5 @@ CREATE TABLE IF NOT EXISTS github_marts.repo_metrics (
 | ClickHouse tables do not exist | `init.sql` skipped on existing volume | Create tables manually (command above) |
 | Superset: `No module named psycopg2` | System `pip install` doesn't reach Superset's venv | Fixed in `superset/Dockerfile`: `pip3 install --target /app/.venv/lib/python3.10/site-packages` |
 | `postgres:18` image not found | Image may still be in beta | Replace with `postgres:17` in `docker-compose.yml` if needed |
+
+

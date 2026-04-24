@@ -1,0 +1,16 @@
+database_name: ClickHouse github_marts
+sqlalchemy_uri: clickhousedb://clickhouse_user:ClickHouse2025!@clickhouse:8123/github_marts
+cache_timeout: null
+expose_in_sqllab: true
+allow_run_async: false
+allow_ctas: false
+allow_cvas: false
+allow_dml: false
+allow_csv_upload: false
+extra:
+  engine_params: {}
+  metadata_params: {}
+  metadata_cache_timeout: {}
+  schemas_allowed_for_csv_upload: []
+uuid: f47ac10b-58cc-4372-a567-0e02b2c3d479
+version: "1.0.0"
