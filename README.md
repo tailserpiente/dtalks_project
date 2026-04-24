@@ -56,6 +56,7 @@ GH Archive (HTTPS)
 dtalks_project/
 ├── pipeline.sh                 # ← main pipeline runner
 ├── docker-compose.yml
+├── .env.example                # copy to `.env` and set secrets (see variable names below)
 ├── .env                        # secrets (not committed)
 ├── requirements.txt
 │
@@ -83,7 +84,8 @@ dtalks_project/
 │   └── init.sql                # DB github_marts + mart tables (runs once on empty volume)
 ├── superset/
 │   ├── Dockerfile              # apache/superset:latest + psycopg2-binary + clickhouse-connect
-│   └── superset_config.py      # SECRET_KEY, SQLALCHEMY_DATABASE_URI, SimpleCache
+│   ├── superset_config.py      # SECRET_KEY, SQLALCHEMY_DATABASE_URI, SimpleCache
+│   └── dashboards/             # optional: bundled Superset export (`github_marts_bi_export.zip`)
 └── s3/
     └── init-s3.sh              # auto-creates github-archive bucket on MinIO startup
 ```
@@ -182,10 +184,10 @@ docker compose exec superset superset fab create-admin \
 
 ### 5. Configure mc alias (one-time)
 
+Use **`MINIO_ROOT_USER`** and **`MINIO_ROOT_PASSWORD`** from your `.env` (same names in `.env.example`) instead of the placeholders:
+
 ```bash
-mc alias set myminio http://localhost:9000 \
-  $(grep MINIO_ROOT_USER .env | cut -d= -f2) \
-  $(grep MINIO_ROOT_PASSWORD .env | cut -d= -f2)
+mc alias set myminio http://localhost:9000 <MINIO_ROOT_USER> <MINIO_ROOT_PASSWORD>
 ```
 
 ### 6. Run the pipeline
@@ -237,13 +239,15 @@ All credentials are read from `.env`.
 
 `Settings → Database Connections → + Database → ClickHouse Connect`
 
+Use host `clickhouse`, port `8123`, and the same **`CLICKHOUSE_USER`**, **`CLICKHOUSE_PASSWORD`**, and **`CLICKHOUSE_DB`** as in your `.env` (see `.env.example`). Paste a URI in this shape, replacing the placeholders with those three values:
+
 ```
-clickhousedb://clickhouse_user:ClickHouse2025!@clickhouse:8123/github_marts
+clickhousedb://<CLICKHOUSE_USER>:<CLICKHOUSE_PASSWORD>@clickhouse:8123/<CLICKHOUSE_DB>
 ```
 
 ### Import bundled dashboard (GitHub marts)
 
-A ready-made dashboard (KPIs, daily trend, event mix, top users and repos) ships as a Superset **v1** export ZIP. It creates its own ClickHouse database connection and datasets pointing at `github_marts.user_activity_daily` and `github_marts.repo_metrics` (defaults: host `clickhouse`, user `clickhouse_user`, password `clickhouse_pass` — align with your `.env` or edit `databases/ClickHouse_github_marts.yaml` in the bundle before zipping).
+A ready-made dashboard (KPIs, daily trend, event mix, top users and repos) ships as a Superset **v1** export ZIP. It creates its own ClickHouse database connection and datasets for `github_marts.user_activity_daily` and `github_marts.repo_metrics`. In **`superset/dashboards/github_marts_bundle/databases/ClickHouse_github_marts.yaml`**, edit `sqlalchemy_uri` the same way: put your **`CLICKHOUSE_USER`**, **`CLICKHOUSE_PASSWORD`**, and **`CLICKHOUSE_DB`** from `.env` into the URI (instead of any placeholder like `<CLICKHOUSE_PASSWORD>`), then rebuild **`github_marts_bi_export.zip`** from the `github_marts_bundle/` folder if needed, or fix the database connection in Superset after import.
 
 ```bash
 docker compose cp superset/dashboards/github_marts_bi_export.zip superset:/tmp/github_marts_bi_export.zip
@@ -276,9 +280,9 @@ docker compose logs -f dbt
 # Connect to PostgreSQL
 docker compose exec postgres psql -U analytics_user -d github_analytics
 
-# Connect to ClickHouse
+# Connect to ClickHouse (use CLICKHOUSE_USER / CLICKHOUSE_PASSWORD from your .env)
 docker compose exec clickhouse clickhouse-client \
-  --user clickhouse_user --password ClickHouse2025!
+  --user <CLICKHOUSE_USER> --password <CLICKHOUSE_PASSWORD>
 ```
 
 ---
@@ -289,7 +293,7 @@ docker compose exec clickhouse clickhouse-client \
 
 ```bash
 docker compose exec clickhouse clickhouse-client \
-  --user clickhouse_user --password ClickHouse2025! \
+  --user <CLICKHOUSE_USER> --password <CLICKHOUSE_PASSWORD> \
   --query "
 CREATE DATABASE IF NOT EXISTS github_marts;
 
